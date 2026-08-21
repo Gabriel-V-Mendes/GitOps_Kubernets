@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-app-gitops
+  namespace: argocd
+spec:
+  project: default
+  source:
+    # A URL do repositório remoto que o ArgoCD vai vigiar
+    repoURL: 'https://github.com/Gabriel-V-Mendes/GitOps_Kubernets.git'
+    targetRevision: HEAD
+    # O caminho exato onde está o nosso Helm Chart
+    path: manifests/helm/my-app
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    # O servidor interno do próprio cluster onde o ArgoCD está rodando
+    server: 'https://kubernetes.default.svc'
+    namespace: dev
+  syncPolicy:
+    automated:
+      prune: true       # Se deletarmos algo no Git, o ArgoCD deleta no cluster
+      selfHeal: true    # Se alguém alterar algo manualmente no cluster, o ArgoCD desfaz e volta para o estado do Git
+    syncOptions:
+      - CreateNamespace=true
