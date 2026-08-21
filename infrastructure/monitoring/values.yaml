@@ -1,0 +1,18 @@
+# Define a senha padrão do Grafana
+grafana:
+  adminPassword: "admin"
+  
+# Limita o consumo de RAM do Prometheus para não travar a sua máquina
+prometheus:
+  prometheusSpec:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 400Mi
+      limits:
+        cpu: 500m
+        memory: 800Mi
+
+# Desativa alertas pesados que não precisamos no laboratório local
+alertmanager:
+  enabled: false
