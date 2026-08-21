@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Terraform (caso exista)
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Temp
+*.tmp
+*.bak
