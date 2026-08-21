@@ -16,10 +16,10 @@ Projeto prático de estudo de **GitOps e Kubernetes**, cobrindo desde a criaçã
 ## Estrutura do projeto
 
 ```
+├── .github/workflows/          # Pipeline CI/CD (GitHub Actions)
 ├── app/                        # Aplicação (Dockerfile, código fonte, testes)
 │   ├── src/                    # Código fonte da aplicação
-│   ├── tests/                  # Testes (smoke test)
-│   └── .github/workflows/      # Pipeline CI/CD (GitHub Actions)
+│   └── tests/                  # Testes (smoke test)
 ├── manifests/
 │   ├── base/                   # Manifests base (Kustomize)
 │   ├── overlays/               # Overlays por ambiente (dev, staging, prod)
