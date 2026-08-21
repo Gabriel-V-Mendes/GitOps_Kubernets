@@ -1,18 +1,34 @@
-# Dependencies
-node_modules/
-
-# IDE
+# IDE / Editor
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# Ferramentas AI/Agent
+.agents/
+.antigravity-ide/
+.aitk/
+.copilot/
+.gemini/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Terraform (caso exista)
-.terraform/
-*.tfstate
-*.tfstate.backup
+# Segredos e credenciais
+.env
+*.env
+kubeconfig
+**/secrets/
+
+# Logs
+*.log
+
+# Helm
+*.tgz
+
+# Node (caso exista)
+node_modules/
 
 # Temp
 *.tmp
