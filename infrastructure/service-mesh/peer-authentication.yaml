@@ -1,0 +1,22 @@
+# PeerAuthentication - Política de mTLS Strict
+# 
+# Esta política força TODAS as comunicações entre os Pods no namespace 'dev'
+# a serem criptografadas com mTLS (mutual TLS).
+#
+# Com mTLS STRICT:
+#   - Nenhum Pod aceita tráfego em texto puro (HTTP)
+#   - Toda comunicação interna é criptografada automaticamente
+#   - Certificados são gerenciados pelo Istio (rotação automática)
+#
+# Modo PERMISSIVE (padrão do Istio):
+#   - Aceita tanto tráfego mTLS quanto texto puro
+#   - Bom para migração gradual
+
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default-mtls
+  namespace: dev
+spec:
+  mtls:
+    mode: STRICT
