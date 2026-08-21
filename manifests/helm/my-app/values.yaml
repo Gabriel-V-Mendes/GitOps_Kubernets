@@ -1,18 +1,24 @@
 replicaCount: 2
 
 image:
-  repository: nginx
-  tag: alpine
-  pullPolicy: IfNotPresent
+  repository: my-app
+  tag: local
+  pullPolicy: Never
 
 service:
   type: ClusterIP
   port: 80
 
 ingress:
+  enabled: false
+
+istio:
+  gateway:
+    enabled: true
+    host: "app.local"
+
+monitoring:
   enabled: true
-  className: "nginx"
-  host: "app.local"
 
 resources:
   requests:
