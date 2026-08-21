@@ -33,3 +33,4 @@ node_modules/
 # Temp
 *.tmp
 *.bak
+kubectl-argo-rollouts-linux-amd64
