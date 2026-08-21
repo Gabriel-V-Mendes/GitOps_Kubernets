@@ -27,8 +27,6 @@ kubeconfig
 # Helm
 *.tgz
 
-# Node (caso exista)
-node_modules/
 
 # Temp
 *.tmp
