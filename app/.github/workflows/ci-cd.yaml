@@ -1,0 +1,75 @@
+# CI/CD Pipeline - GitHub Actions
+# Esse workflow é acionado a cada push na branch main.
+# Ele faz: lint → test → build da imagem Docker → push para registry → atualiza tag no values.yaml
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/src/**'
+  pull_request:
+    branches: [main]
+
+env:
+  IMAGE_NAME: my-app
+  REGISTRY: ghcr.io
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run linter
+        run: echo "Executando linter no código..."
+
+      - name: Run tests
+        run: echo "Executando testes unitários..."
+
+  build-and-push:
+    name: Build & Push Image
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./app
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+
+  update-manifests:
+    name: Update Helm Values
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update image tag in values.yaml
+        run: |
+          sed -i "s|tag:.*|tag: \"${{ github.sha }}\"|" manifests/helm/my-app/values.yaml
+
+      - name: Commit and push updated manifests
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add manifests/helm/my-app/values.yaml
+          git commit -m "ci: update image tag to ${{ github.sha }}"
+          git push

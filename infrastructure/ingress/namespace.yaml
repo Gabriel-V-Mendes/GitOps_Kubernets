@@ -1,0 +1,20 @@
+# Ingress Controller - NGINX
+# Instalação via Helm do NGINX Ingress Controller para o cluster Kind
+#
+# Comando de instalação:
+#   helm upgrade --install ingress-nginx ingress-nginx \
+#     --repo https://kubernetes.github.io/ingress-nginx \
+#     --namespace ingress-nginx --create-namespace \
+#     --set controller.hostPort.enabled=true \
+#     --set controller.service.type=NodePort
+#
+# Validação:
+#   kubectl get pods -n ingress-nginx
+#   kubectl get svc -n ingress-nginx
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx

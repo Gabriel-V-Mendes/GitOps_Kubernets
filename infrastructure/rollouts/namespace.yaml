@@ -1,0 +1,23 @@
+# Argo Rollouts - Progressive Delivery (Futuro)
+# Canary e Blue-Green deployments para zero-downtime releases
+#
+# Instalação:
+#   kubectl create namespace argo-rollouts
+#   kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+#
+# Exemplo de Rollout Strategy:
+#   strategy:
+#     canary:
+#       steps:
+#         - setWeight: 20
+#         - pause: { duration: 30s }
+#         - setWeight: 50
+#         - pause: { duration: 30s }
+#         - setWeight: 100
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argo-rollouts
+  labels:
+    app.kubernetes.io/name: argo-rollouts
