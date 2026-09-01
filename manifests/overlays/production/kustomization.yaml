@@ -7,6 +7,11 @@ resources:
 namespace: production
 namePrefix: prod-
 
+images:
+  - name: nginx:alpine
+    newName: nginx
+    newTag: "1.27-alpine"
+
 replicas:
   - name: my-app-deployment
     count: 5

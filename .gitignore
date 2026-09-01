@@ -28,6 +28,9 @@ kubeconfig
 *.tgz
 
 
+# Istio (download de ferramenta, não código do projeto)
+istio-*/
+
 # Temp
 *.tmp
 *.bak

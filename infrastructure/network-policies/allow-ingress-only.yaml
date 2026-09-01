@@ -8,7 +8,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: my-app-gitops
+      app: my-app
   policyTypes:
     - Ingress
   ingress:
