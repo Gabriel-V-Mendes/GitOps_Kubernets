@@ -276,7 +276,25 @@ No **Projeto 1** usamos **Deploy por Push** (GitHub Actions conectando via SSH n
 Por que o Argo Rollouts é opcional neste projeto?
 Porque em Kubernetes puro (sem um controlador de roteamento que divida tráfego por porcentagem), os passos `setWeight` de um `Rollout` apenas aproximam a proporção pela quantidade de Pods (ex.: para fazer 10% canário seriam necessários 10 Pods).
 
-Quando `rollout.enabled=true` no [`values.yaml`](manifests/helm/devops-api/values.yaml), o chart:
+Quando `rollout.enabled=true` (habilitado por padrão no ambiente **`staging`** em [`values-staging.yaml`](manifests/helm/devops-api/values-staging.yaml)), o chart:
 1. Substitui o `Deployment` por um recurso `Rollout` ([`templates/rollout.yaml`](manifests/helm/devops-api/templates/rollout.yaml));
 2. Cria o serviço `devops-api-<env>-canary`;
-3. Adiciona o `backendRef` canário na `HTTPRoute` ([`templates/httproute.yaml`](manifests/helm/devops-api/templates/httproute.yaml)) para que o plugin `argoproj-labs/gatewayAPI` controle a divisão exata de tráfego HTTP (`weight: 20/80`, `50/50`, `100/0`) no Envoy Gateway, independentemente do número de Pods.
+3. Adiciona o `backendRef` canário na `HTTPRoute` ([`templates/httproute.yaml`](manifests/helm/devops-api/templates/httproute.yaml)) para que o plugin `argoproj-labs/gatewayAPI` ([`infrastructure/rollouts/namespace.yaml`](infrastructure/rollouts/namespace.yaml)) controle a divisão exata de tráfego HTTP (`weight: 80/20`, `50/50`, `100/0`) no Envoy Gateway, independentemente do número de Pods.
+
+Para demonstrar a progressão Canário ao vivo no cluster:
+
+```bash
+make canary     # ou: ./scripts/demo-canary.sh
+```
+
+Saída real da execução no ambiente `staging`:
+
+```text
+[7s] Rollout: Progressing (step 0) | HTTPRoute weights: devops-api-staging=100% devops-api-staging-canary=0% 
+[8s] Rollout: Paused (step 1) | HTTPRoute weights: devops-api-staging=80% devops-api-staging-canary=20% 
+[14s] Rollout: Paused (step 3) | HTTPRoute weights: devops-api-staging=50% devops-api-staging-canary=50% 
+[21s] Rollout: Progressing (step 4) | HTTPRoute weights: devops-api-staging=50% devops-api-staging-canary=50% 
+[27s] Rollout: Healthy (step 5) | HTTPRoute weights: devops-api-staging=100% devops-api-staging-canary=0% 
+
+✅ Promoção Canário (20% -> 50% -> 100%) concluída com sucesso!
+```

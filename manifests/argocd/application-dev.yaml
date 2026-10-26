@@ -25,7 +25,7 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       jqPathExpressions:
-        - .spec.rules[].backendRefs
+        - .spec.rules[].backendRefs[].weight
   syncPolicy:
     automated:
       prune: true       # Recursos removidos do Git são removidos automaticamente do cluster
