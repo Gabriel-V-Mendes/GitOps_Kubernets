@@ -34,6 +34,30 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.postgresql.enabled }}
+      initContainers:
+        - name: wait-for-postgres
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          command:
+            - python
+            - -c
+            - |
+              import socket, sys, time
+              host = "{{ include "devops-api.fullname" . }}-postgres"
+              port = {{ .Values.postgresql.service.port }}
+              for attempt in range(1, 61):
+                  try:
+                      with socket.create_connection((host, port), timeout=2):
+                          print(f"PostgreSQL pronto em {host}:{port} (tentativa {attempt})")
+                          sys.exit(0)
+                  except OSError as exc:
+                      print(f"Aguardando PostgreSQL em {host}:{port} ({attempt}/60): {exc}")
+                      time.sleep(2)
+              sys.exit(1)
+      {{- end }}
       containers:
         - name: api
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

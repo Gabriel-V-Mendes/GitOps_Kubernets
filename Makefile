@@ -3,7 +3,7 @@ SHELL := /bin/bash
 CLUSTER_NAME := devops-lab
 CHART_DIR := manifests/helm/devops-api
 
-.PHONY: help bootstrap cluster-down restore smoke drift lint secrets status port-forward-argocd port-forward-api
+.PHONY: help bootstrap cluster-down restore smoke drift canary lint secrets status port-forward-argocd port-forward-api
 
 help: ## Lista todos os atalhos disponíveis
 	@grep -E '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -21,6 +21,9 @@ smoke: ## Testa a API via port-forward e via Gateway API (dev e staging)
 
 drift: ## Demonstra drift manual no cluster e o ArgoCD corrigindo (self-heal)
 	./scripts/demo-drift.sh
+
+canary: ## Demonstra o desafio opcional Argo Rollouts Canary (20% -> 50% -> 100%) na Gateway API
+	./scripts/demo-canary.sh
 
 lint: ## Valida o Helm chart (values-dev e values-staging) e kustomize do ArgoCD
 	helm lint $(CHART_DIR) -f $(CHART_DIR)/values.yaml -f $(CHART_DIR)/values-dev.yaml

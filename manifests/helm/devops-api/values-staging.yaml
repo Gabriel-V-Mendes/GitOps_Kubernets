@@ -35,3 +35,14 @@ gatewayApi:
   enabled: true
   hostnames:
     - "staging.api.local"
+
+# Desafio Opcional Habilitado em Staging:
+# Argo Rollouts Canary com divisão real de tráfego via Gateway API (Envoy Gateway)
+rollout:
+  enabled: true
+  steps:
+    - setWeight: 20
+    - pause: { duration: 15s }
+    - setWeight: 50
+    - pause: { duration: 15s }
+    - setWeight: 100

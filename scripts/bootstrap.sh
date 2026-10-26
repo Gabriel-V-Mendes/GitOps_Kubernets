@@ -92,7 +92,16 @@ kubectl apply -f "$ROOT_DIR/infrastructure/external-secrets/cluster-secret-store
 kubectl wait --for=condition=Ready clustersecretstore/k8s-secret-store --timeout=60s
 
 echo "=================================================================="
-echo "5/6 · ArgoCD (GitOps Controller)"
+echo "5/7 · Argo Rollouts + Gateway API Plugin (Desafio Opcional Canary)"
+echo "=================================================================="
+kubectl apply -f "$ROOT_DIR/infrastructure/rollouts/namespace.yaml"
+kubectl apply -n argo-rollouts \
+  -f https://github.com/argoproj/argo-rollouts/releases/download/v1.7.2/install.yaml
+kubectl apply -f "$ROOT_DIR/infrastructure/rollouts/namespace.yaml"
+kubectl rollout status deployment/argo-rollouts -n argo-rollouts --timeout=120s
+
+echo "=================================================================="
+echo "6/7 · ArgoCD (GitOps Controller)"
 echo "=================================================================="
 kubectl apply -f "$ROOT_DIR/infrastructure/argocd/namespace.yaml"
 kubectl apply -n argocd --server-side --force-conflicts \
@@ -104,16 +113,17 @@ kubectl rollout status deployment/argocd-repo-server -n argocd --timeout=180s
 kubectl rollout status statefulset/argocd-application-controller -n argocd --timeout=180s
 
 echo "=================================================================="
-echo "6/6 · Aplicando Applications do ArgoCD (dev e staging)"
+echo "7/7 · Aplicando Applications do ArgoCD (dev e staging)"
 echo "=================================================================="
 kubectl apply -k "$ROOT_DIR/manifests/argocd"
 
 echo "Aguardando ArgoCD sincronizar e criar os workloads em 'dev' e 'staging'..."
 for ns in dev staging; do
-  echo -n "Aguardando Deployment e StatefulSet em '$ns' serem criados pelo ArgoCD"
+  echo -n "Aguardando workloads em '$ns' serem criados pelo ArgoCD"
   for _ in $(seq 1 60); do
-    if kubectl get deployment "devops-api-${ns}" -n "$ns" >/dev/null 2>&1 && \
-       kubectl get statefulset "devops-api-${ns}-postgres" -n "$ns" >/dev/null 2>&1; then
+    if kubectl get statefulset "devops-api-${ns}-postgres" -n "$ns" >/dev/null 2>&1 && \
+       { kubectl get deployment "devops-api-${ns}" -n "$ns" >/dev/null 2>&1 || \
+         kubectl get rollout.argoproj.io "devops-api-${ns}" -n "$ns" >/dev/null 2>&1; }; then
       echo " OK!"
       break
     fi
@@ -121,7 +131,11 @@ for ns in dev staging; do
     sleep 3
   done
   kubectl rollout status "statefulset/devops-api-${ns}-postgres" -n "$ns" --timeout=180s
-  kubectl rollout status "deployment/devops-api-${ns}" -n "$ns" --timeout=180s
+  if kubectl get deployment "devops-api-${ns}" -n "$ns" >/dev/null 2>&1; then
+    kubectl rollout status "deployment/devops-api-${ns}" -n "$ns" --timeout=180s
+  else
+    kubectl wait --for=condition=Available "rollout.argoproj.io/devops-api-${ns}" -n "$ns" --timeout=180s
+  fi
 done
 
 echo ""

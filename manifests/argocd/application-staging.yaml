@@ -21,6 +21,11 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: staging
+  ignoreDifferences:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      jqPathExpressions:
+        - .spec.rules[].backendRefs
   syncPolicy:
     automated:
       prune: true       # Recursos removidos do Git são removidos automaticamente do cluster
@@ -28,3 +33,4 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ApplyOutOfSyncOnly=true
+      - RespectIgnoreDifferences=true
