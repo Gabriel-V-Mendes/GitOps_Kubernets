@@ -30,3 +30,7 @@ keys.txt
 *.bak
 istio-*/
 kubectl-argo-rollouts-linux-amd64
+
+# Material local de estudo pessoal
+estudos/
+docs/GUIA_DE_ESTUDO.md
