@@ -180,6 +180,55 @@ O que acontece passo a passo:
 2. O script executa `kubectl scale deployment devops-api-dev -n dev --replicas=4` à mão no cluster.
 3. O Kubernetes chega a iniciar 3 pods extras, mas o **ArgoCD detecta a divergência (`OutOfSync`)** em relação ao Git e, graças ao **`selfHeal: true`**, reaplica imediatamente `replicas: 1`, encerrando (`Terminating`) os pods excedentes e voltando o status para **`Synced` + `Healthy`**.
 
+Saída real da execução no cluster `kind`:
+
+```text
+==================================================================
+1. Estado inicial (declarado no Git: replicas=1)
+==================================================================
+NAME             SYNC STATUS   HEALTH STATUS   REVISION                                   PROJECT
+devops-api-dev   Synced        Healthy         a23353dd40cc626d607180b8dd21fac1eb75aaaa   default
+NAME             READY   UP-TO-DATE   AVAILABLE   AGE
+devops-api-dev   1/1     1            1           5m1s
+
+==================================================================
+2. Causando DRIFT manual no cluster (kubectl scale --replicas=4)
+==================================================================
+deployment.apps/devops-api-dev scaled
+deployment.apps/devops-api-dev annotated
+Estado imediatamente após a alteração manual (drift introduzido):
+NAME             READY   UP-TO-DATE   AVAILABLE   AGE
+devops-api-dev   1/4     4            1           5m1s
+NAME                              READY   STATUS     RESTARTS   AGE
+devops-api-dev-5946b5559c-24vj8   0/1     Init:0/1   0          0s
+devops-api-dev-5946b5559c-grwcv   0/1     Init:0/1   0          0s
+devops-api-dev-5946b5559c-lw6dw   0/1     Init:0/1   0          0s
+devops-api-dev-5946b5559c-qr4kl   1/1     Running    0          5m1s
+
+==================================================================
+3. Aguardando o ArgoCD (selfHeal: true) corrigir o drift...
+==================================================================
+[1s] Application sync=Synced | Deployment spec.replicas=4
+[2s] Application sync=Synced | Deployment spec.replicas=4
+[3s] Application sync=Synced | Deployment spec.replicas=4
+[4s] Application sync=Synced | Deployment spec.replicas=1
+
+✅ Drift corrigido automaticamente pelo ArgoCD!
+
+==================================================================
+4. Estado final restaurado (idêntico ao Git: replicas=1)
+==================================================================
+NAME             SYNC STATUS   HEALTH STATUS   REVISION                                   PROJECT
+devops-api-dev   Synced        Healthy         a23353dd40cc626d607180b8dd21fac1eb75aaaa   default
+NAME             READY   UP-TO-DATE   AVAILABLE   AGE
+devops-api-dev   1/1     1            1           5m8s
+NAME                              READY   STATUS        RESTARTS   AGE
+devops-api-dev-5946b5559c-24vj8   0/1     Terminating   0          7s
+devops-api-dev-5946b5559c-grwcv   0/1     Terminating   0          7s
+devops-api-dev-5946b5559c-lw6dw   0/1     Terminating   0          7s
+devops-api-dev-5946b5559c-qr4kl   1/1     Running       0          5m8s
+```
+
 ---
 
 ## 7. Disaster Recovery: Apagar o Cluster e Restaurar Só a Partir do Git

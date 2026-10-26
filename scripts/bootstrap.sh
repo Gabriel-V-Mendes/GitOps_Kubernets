@@ -110,9 +110,10 @@ kubectl apply -k "$ROOT_DIR/manifests/argocd"
 
 echo "Aguardando ArgoCD sincronizar e criar os workloads em 'dev' e 'staging'..."
 for ns in dev staging; do
-  echo -n "Aguardando Deployment em '$ns' ser criado pelo ArgoCD"
+  echo -n "Aguardando Deployment e StatefulSet em '$ns' serem criados pelo ArgoCD"
   for _ in $(seq 1 60); do
-    if kubectl get deployment "devops-api-${ns}" -n "$ns" >/dev/null 2>&1; then
+    if kubectl get deployment "devops-api-${ns}" -n "$ns" >/dev/null 2>&1 && \
+       kubectl get statefulset "devops-api-${ns}-postgres" -n "$ns" >/dev/null 2>&1; then
       echo " OK!"
       break
     fi
