@@ -15,23 +15,18 @@
 .DS_Store
 Thumbs.db
 
-# Segredos e credenciais
+# Chaves privadas (SOPS / age / Sealed Secrets / kubeconfig) — NUNCA vão ao Git
 .env
 *.env
 kubeconfig
-**/secrets/
+*.key
+.sops-age-key.txt
+keys.txt
 
-# Logs
+# Logs e temporários
 *.log
-
-# Helm
 *.tgz
-
-
-# Istio (download de ferramenta, não código do projeto)
-istio-*/
-
-# Temp
 *.tmp
 *.bak
+istio-*/
 kubectl-argo-rollouts-linux-amd64

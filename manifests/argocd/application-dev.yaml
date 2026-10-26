@@ -1,0 +1,30 @@
+# ArgoCD Application — Ambiente DEV
+# Vigia o repositório Git de manifests e sincroniza continuamente o estado do
+# namespace `dev` usando o Helm chart `devops-api` + `values-dev.yaml`.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: devops-api-dev
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Gabriel-V-Mendes/GitOps_Kubernets.git
+    targetRevision: HEAD
+    path: manifests/helm/devops-api
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-dev.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
+  syncPolicy:
+    automated:
+      prune: true       # Recursos removidos do Git são removidos automaticamente do cluster
+      selfHeal: true    # Drift manual no cluster é desfeito automaticamente pelo ArgoCD
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true

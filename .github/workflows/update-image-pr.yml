@@ -1,0 +1,47 @@
+name: Open Image Tag PR
+
+# Este workflow abre um Pull Request atualizando a tag da imagem da API do Projeto 1
+# em `values-dev.yaml` ou `values-staging.yaml`.
+# Pode ser disparado:
+#   1. Automaticamente via `repository_dispatch` pelo pipeline CI do Projeto 1
+#   2. Manualmente na aba Actions (`workflow_dispatch`) para promover uma tag
+on:
+  repository_dispatch:
+    types: [new-image-published]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Nova tag da imagem (ex.: sha-74f3e26566a1c1dc9033d18d9b6f2beddfc7eb8c)"
+        required: true
+        type: string
+      environment:
+        description: "Ambiente alvo"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - staging
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  open-pr:
+    name: Open GitOps PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NEW_TAG: ${{ github.event.inputs.image_tag || github.event.client_payload.image_tag }}
+      TARGET_ENV: ${{ github.event.inputs.environment || github.event.client_payload.environment || 'dev' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Criar branch e abrir Pull Request com a nova tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          chmod +x ./scripts/open-image-pr.sh
+          ./scripts/open-image-pr.sh "$NEW_TAG" "$TARGET_ENV"

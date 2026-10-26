@@ -1,0 +1,7 @@
+# Configuração do Mozilla SOPS + age.
+# Apenas os campos sensíveis (data e stringData) de recursos Kubernetes são
+# criptografados (AES-256-GCM), mantendo metadados legíveis para auditoria no Git.
+creation_rules:
+  - path_regex: infrastructure/secrets/.*\.sops\.yaml$
+    encrypted_regex: "^(data|stringData)$"
+    age: "age1a4mdu2sv0zzsxujj9sgsqaftxyl0c4y53yj0sekprss7pkzhkytq5f2k93"

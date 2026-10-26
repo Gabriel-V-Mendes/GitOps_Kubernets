@@ -1,0 +1,40 @@
+{{- if .Values.gatewayApi.enabled -}}
+# HTTPRoute oficial da Kubernetes Gateway API (gateway.networking.k8s.io/v1).
+# Substitui o antigo Ingress NGINX por um modelo declarativo moderno, orientado a papéis
+# (o time de plataforma gerencia o Gateway em `envoy-gateway-system`, e cada ambiente
+# dev/staging anexa sua própria HTTPRoute).
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "devops-api.fullname" . }}-route
+  labels:
+    {{- include "devops-api.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ .Values.gatewayApi.parentGateway.name }}
+      namespace: {{ .Values.gatewayApi.parentGateway.namespace }}
+  hostnames:
+    {{- range .Values.gatewayApi.hostnames }}
+    - {{ . | quote }}
+    {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ .Values.gatewayApi.pathPrefix }}
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: {{ include "devops-api.fullname" . }}
+          port: {{ .Values.service.port }}
+          weight: 100
+        {{- if .Values.rollout.enabled }}
+        - group: ""
+          kind: Service
+          name: {{ include "devops-api.fullname" . }}-canary
+          port: {{ .Values.service.port }}
+          weight: 0
+        {{- end }}
+{{- end }}

@@ -1,0 +1,37 @@
+# ==============================================================================
+# Ambiente: STAGING (namespace `staging`)
+# Maior disponibilidade (2 réplicas da API) e limites de recursos mais folgados.
+# ==============================================================================
+
+replicaCount: 2
+
+image:
+  tag: "sha-74f3e26566a1c1dc9033d18d9b6f2beddfc7eb8c"
+
+app:
+  name: "DevOps API (staging)"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 192Mi
+  limits:
+    cpu: 500m
+    memory: 384Mi
+
+postgresql:
+  persistence:
+    enabled: true
+    size: 2Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 192Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+gatewayApi:
+  enabled: true
+  hostnames:
+    - "staging.api.local"

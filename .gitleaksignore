@@ -1,0 +1,10 @@
+# Falsos positivos históricos em arquivos já removidos (samples do Istio e dummy secret antigo):
+5563437f1eb5739210e5fa9de5f9827d5c94ed4d:istio-1.30.3/samples/bookinfo/platform/kube/bookinfo-mysql.yaml:kubernetes-secret-yaml:20
+5563437f1eb5739210e5fa9de5f9827d5c94ed4d:istio-1.30.3/samples/certs/ca-key-alt-2.pem:private-key:1
+5563437f1eb5739210e5fa9de5f9827d5c94ed4d:istio-1.30.3/samples/certs/ca-key.pem:private-key:1
+5563437f1eb5739210e5fa9de5f9827d5c94ed4d:istio-1.30.3/samples/certs/ca-key-alt.pem:private-key:1
+5563437f1eb5739210e5fa9de5f9827d5c94ed4d:istio-1.30.3/samples/certs/workload-bar-key.pem:private-key:1
+5563437f1eb5739210e5fa9de5f9827d5c94ed4d:istio-1.30.3/samples/certs/workload-foo-key.pem:private-key:1
+5563437f1eb5739210e5fa9de5f9827d5c94ed4d:istio-1.30.3/samples/jwt-server/jwt-server.yaml:private-key:65
+2ed3eba436d6375f784d172ebac94453249d5043:manifests/helm/my-app/templates/secret.yaml:kubernetes-secret-yaml:2
+2ed3eba436d6375f784d172ebac94453249d5043:manifests/helm/my-app/templates/secret.yaml:generic-api-key:12

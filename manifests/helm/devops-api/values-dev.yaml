@@ -1,0 +1,37 @@
+# ==============================================================================
+# Ambiente: DEV (namespace `dev`)
+# O pipeline CI do Projeto 1 abre Pull Request atualizando `image.tag` aqui.
+# ==============================================================================
+
+replicaCount: 1
+
+image:
+  tag: "sha-74f3e26566a1c1dc9033d18d9b6f2beddfc7eb8c"
+
+app:
+  name: "DevOps API (dev)"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+postgresql:
+  persistence:
+    enabled: true
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+gatewayApi:
+  enabled: true
+  hostnames:
+    - "dev.api.local"

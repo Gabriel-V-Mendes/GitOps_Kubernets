@@ -1,0 +1,93 @@
+{{- if not .Values.rollout.enabled -}}
+# Deployment padrão da API do Projeto 1 (FastAPI + SQLAlchemy + psycopg3).
+# Roda como non-root (UID 10001), filesystem somente leitura, com Liveness (/health)
+# e Readiness (/health/ready) probes separadas e requests/limits definidos.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "devops-api.fullname" . }}
+  labels:
+    {{- include "devops-api.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "devops-api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "devops-api.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.postgresql.enabled }}
+      initContainers:
+        - name: wait-for-postgres
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          command:
+            - python
+            - -c
+            - |
+              import socket, sys, time
+              host = "{{ include "devops-api.fullname" . }}-postgres"
+              port = {{ .Values.postgresql.service.port }}
+              for attempt in range(1, 61):
+                  try:
+                      with socket.create_connection((host, port), timeout=2):
+                          print(f"PostgreSQL pronto em {host}:{port} (tentativa {attempt})")
+                          sys.exit(0)
+                  except OSError as exc:
+                      print(f"Aguardando PostgreSQL em {host}:{port} ({attempt}/60): {exc}")
+                      time.sleep(2)
+              sys.exit(1)
+      {{- end }}
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "devops-api.secretName" . }}
+                  key: DATABASE_URL
+            - name: APP_NAME
+              value: {{ .Values.app.name | quote }}
+            - name: APP_VERSION
+              value: {{ .Values.image.tag | quote }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}
