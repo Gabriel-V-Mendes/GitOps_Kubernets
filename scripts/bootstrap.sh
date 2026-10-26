@@ -52,6 +52,8 @@ if ! helm status eg -n envoy-gateway-system >/dev/null 2>&1; then
     --wait --timeout 5m
 fi
 kubectl apply -f "$ROOT_DIR/infrastructure/gateway/envoy-gateway.yaml"
+kubectl wait --for=condition=Programmed gateway/shared-gateway -n envoy-gateway-system --timeout=90s
+kubectl wait --for=condition=Ready pod -l gateway.envoyproxy.io/owning-gateway-name=shared-gateway -n envoy-gateway-system --timeout=120s
 
 echo "=================================================================="
 echo "4/6 · External Secrets Operator + SOPS (Segredos fora do Git)"
