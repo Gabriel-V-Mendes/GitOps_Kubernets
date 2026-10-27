@@ -298,3 +298,39 @@ Saída real da execução no ambiente `staging`:
 
 ✅ Promoção Canário (20% -> 50% -> 100%) concluída com sucesso!
 ```
+
+---
+
+## 11. Decisões e Trade-offs
+
+| Decisão | Alternativa avaliada | Por quê / Trade-off |
+|---|---|---|
+| **2 repositórios separados** (Código no Projeto 1 vs Manifests aqui) | Monorepo (código + manifests juntos) | Evita loops infinitos de CI e isola permissões: o ArgoCD só lê o repo de manifests. Em troca, exige automação (`open-image-pr.sh`) para abrir PR de atualização de tag entre repositórios |
+| **Gateway API (`Envoy Gateway v1.3.0`)** com `EnvoyProxy` NodePort `30080` | Ingress NGINX legado, Traefik, Cilium, Istio | O Ingress NGINX foi aposentado pelo SIG Network. O Envoy Gateway é padrão CNCF, consome ~110 MB de RAM e permite fixar `NodePort 30080` declarativamente para casar com o `extraPortMappings` do `kind` sem precisar de MetalLB |
+| **SOPS (`age`) + External Secrets Operator (ESO)** | `kind: Secret` Base64, Sealed Secrets (Bitnami), Vault | Base64 não é criptografia. O SOPS criptografa a semente no Git (`AES-256-GCM`) e o ESO gera os Secrets dinamicamente com `template` (`DATABASE_URL`). Evita o Sealed Secrets (mantido pela Bitnami e acoplado à chave de um único cluster) |
+| **`StatefulSet` próprio do PostgreSQL 17-alpine** no Helm chart | Subchart `bitnami/postgresql` | Elimina dependência do catálogo restrito da Bitnami e dá controle explícito sobre probes (`pg_isready`), `securityContext` e `PersistentVolumeClaim` |
+| **ArgoCD em modo Pull (`selfHeal: true` + `prune: true`)** | Deploy por Push (`kubectl apply` no GitHub Actions) | Credenciais de admin do cluster nunca saem do cluster e qualquer alteração manual (`kubectl scale/edit`) é revertida automaticamente em segundos |
+| **Argo Rollouts opcional (`rollout.enabled`)** integrado à Gateway API | `Rollout` obrigatório sem controlador de tráfego | Sem roteador HTTP que divida tráfego por peso (`weight`), um `Rollout` apenas escala réplicas. Com o plugin `argoproj-labs/gatewayAPI`, `staging` faz canário real (`80/20` → `50/50` → `100/0`) na `HTTPRoute` |
+
+---
+
+## 12. Custo Estimado
+
+Valores de referência em **outubro/2026** (sem impostos):
+
+| Cenário | Componentes | Custo Mensal Estimado | Observação |
+|---|---|---|---|
+| **1. Laboratório Local (`kind` — padrão deste repo)** | Cluster `kind` (`devops-lab`) + Envoy Gateway + ArgoCD + ESO + 2 ambientes (`dev` e `staging`) | **US$ 0,00 / mês** | Roda 100% em Docker local (~1,6 GB de RAM total consumida pelo container do nó `kind`) |
+| **2. CI/CD e Registry (GitHub público)** | GitHub Actions (`helm lint`, `kubeconform`, `gitleaks`), GHCR e Dependabot | **US$ 0,00 / mês** | Gratuito para repositórios públicos |
+| **3. Kubernetes em VPS única (K3s em Hetzner CX32)** | 4 vCPU, 8 GB RAM, 80 GB NVMe rodando a mesma pilha (ArgoCD + Envoy Gateway + ESO + Postgres) | **≈ € 11,50 / mês (~US$ 12,50)** | Opção de baixo custo para manter `dev` + `staging` 24/7 na nuvem sem pagar taxa de control-plane gerenciado |
+| **4. Kubernetes Gerenciado (AWS EKS / GCP GKE)** | Control plane EKS (US$ 73) + 2 nós `t3.medium` Spot/Saving Plans (~US$ 35) + NLB (~US$ 18) | **≈ US$ 126,00 / mês** | Recomendado apenas quando houver múltiplos times ou exigência de SLA gerenciado do control-plane |
+
+---
+
+## 13. O que eu faria diferente
+
+1. **Plugin KSOPS ou Cofre de Nuvem (AWS Secrets Manager / HashiCorp Vault) em Produção:** hoje o `bootstrap.sh` descriptografa o "Secret Zero" (`postgres-source-secret.sops.yaml`) com `sops` + `age` em memória e alimenta o `ClusterSecretStore` local. Em nuvem, eu apontaria o `ClusterSecretStore` diretamente para o AWS Secrets Manager / GCP Secret Manager com autenticação via **Workload Identity / IRSA**, eliminando até mesmo o Secret semente.
+2. **ApplicationSet no lugar de Applications individuais:** temos `application-dev.yaml` e `application-staging.yaml` separados por clareza didática. Com 5+ ambientes ou múltiplos microsserviços, um único `ApplicationSet` com Matrix/List Generator reduziria repetição.
+3. **Análise Automatizada no Canary (`AnalysisTemplate` no Argo Rollouts):** o `Rollout` em `staging` faz pausas temporizadas (`pause: 15s`) nos passos de `20%` e `50%`. Conectando um `AnalysisTemplate` ao Prometheus (Projeto 4), o Rollout promoveria ou faria rollback automático com base na taxa de erros `5xx` e na latência `p95`.
+4. **TLS Automático na Gateway API com `cert-manager`:** hoje o listener do `Gateway` opera em HTTP na porta `80` (`localhost:8080`). Adicionar o `cert-manager` emitindo certificados (autoassinados localmente ou Let's Encrypt em produção) no listener HTTPS (`8443 -> 30443`) fecharia a criptografia em trânsito na borda.
+5. **Políticas de Admissão com Kyverno ou OPA Gatekeeper:** além de validar probes e `requests/limits` no CI, um controlador de admissão no cluster bloquearia qualquer workload fora do padrão mesmo se aplicado fora do fluxo GitOps.
