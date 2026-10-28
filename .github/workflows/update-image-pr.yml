@@ -37,7 +37,7 @@ jobs:
       NEW_TAG: ${{ github.event.inputs.image_tag || github.event.client_payload.image_tag }}
       TARGET_ENV: ${{ github.event.inputs.environment || github.event.client_payload.environment || 'dev' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Criar branch e abrir Pull Request com a nova tag
         run: |
