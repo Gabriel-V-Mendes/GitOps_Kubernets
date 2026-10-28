@@ -254,6 +254,9 @@ Em vez de o CI fazer commit direto na branch `main`, a atualização de imagem s
 2. **Neste repositório ([`.github/workflows/update-image-pr.yml`](.github/workflows/update-image-pr.yml)):** também é possível disparar a abertura de PR via `repository_dispatch` ou manualmente (`workflow_dispatch`) informando a tag e o ambiente (`dev` ou `staging`).
 3. **Validação na PR:** antes do merge, o workflow [`ci.yml`](.github/workflows/ci.yml) valida `helm lint`, schemas Kubernetes com `kubeconform`, presença de probes/limites e ausência de segredos. Após o merge na `main`, o ArgoCD detecta o novo commit e atualiza o cluster automaticamente.
 
+* **Evidência do CI (GitHub Actions):**
+  [Run #40609476728 no GitHub Actions](https://github.com/Gabriel-V-Mendes/GitOps_Kubernets/actions/runs/40609476728) (jobs de linting, validação de schemas Kubernetes e varredura de segredos aprovados).
+
 ---
 
 ## 9. Deploy por Push vs Deploy por Pull (GitOps)
